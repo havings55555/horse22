@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>2줄 트랙 + 사용자 승률 설정</title>
+  <title>2줄 트랙 + 사용자 승률 + 중간 순위</title>
   <style>
     body { font-family: sans-serif; padding: 20px; }
 
@@ -35,7 +35,7 @@
 </head>
 <body>
 
-  <h1>2줄 트랙 경마 (사용자 승률 설정)</h1>
+  <h1>🏇 2줄 트랙 경마 - 사용자 승률 + 실시간 순위</h1>
 
   <div>
     <label>1번 말 승률 (%) <input id="rate1" type="number" value="60" min="0" max="100"></label>
@@ -51,6 +51,7 @@
     <div class="horse" id="horse3">3번 말</div>
   </div>
 
+  <div id="ranking"></div>
   <div id="result"></div>
   <div id="stats"></div>
 
@@ -69,7 +70,6 @@
     let animationId = null;
     let lastFrame = null;
     let running = false;
-    let winRates = [0.6, 0.3, 0.1];
 
     function getRates() {
       const r1 = parseInt(document.getElementById('rate1').value) || 0;
@@ -80,23 +80,29 @@
     }
 
     function updateSpeeds() {
-      winRates = getRates();
-
+      const winRates = getRates();
       horses.forEach((horse, i) => {
         const rate = winRates[i];
-
         if (rate >= 0.6) {
-          horse.speed = Math.floor(Math.random() * 301) + 700;  // 700~1000
+          horse.speed = Math.floor(Math.random() * 301) + 700;
         } else if (rate >= 0.3) {
-          horse.speed = Math.floor(Math.random() * 501) + 400;  // 400~900
+          horse.speed = Math.floor(Math.random() * 501) + 400;
         } else {
           if (Math.random() < rate + 0.05) {
-            horse.speed = Math.floor(Math.random() * 201) + 1000; // 빠름
+            horse.speed = Math.floor(Math.random() * 201) + 1000;
           } else {
-            horse.speed = Math.floor(Math.random() * 51) + 30;   // 느림
+            horse.speed = Math.floor(Math.random() * 51) + 30;
           }
         }
       });
+    }
+
+    function updateRanking() {
+      const sorted = [...horses].sort((a, b) =>
+        (b.trackStep * trackWidth + b.pos) - (a.trackStep * trackWidth + a.pos)
+      );
+      const html = sorted.map((h, i) => `<li>${i + 1}위: ${h.name}</li>`).join('');
+      document.getElementById('ranking').innerHTML = `<h3>🏁 현재 순위</h3><ul>${html}</ul>`;
     }
 
     function moveHorses(timestamp) {
@@ -106,18 +112,18 @@
 
       horses.forEach(horse => {
         horse.pos += horse.speed * delta;
-
         if (horse.trackStep === 0 && horse.pos + horseWidth >= trackWidth) {
           horse.trackStep = 1;
           horse.pos = 0;
         }
-
         const left = horse.pos;
         const top = lineTop[horse.trackStep];
-        document.getElementById(horse.id).style.left = left + 'px';
-        document.getElementById(horse.id).style.top = top + 'px';
+        const elem = document.getElementById(horse.id);
+        elem.style.left = left + 'px';
+        elem.style.top = top + 'px';
       });
 
+      updateRanking();
       checkWinner();
 
       if (running) {
@@ -140,15 +146,22 @@
       }
     }
 
+    function showResult(winnerName) {
+      document.getElementById('result').innerHTML = `<h2>🎉 우승: ${winnerName}</h2>`;
+      updateStatsUI();
+    }
+
     function resetRace() {
       horses.forEach(horse => {
         horse.pos = 0;
         horse.trackStep = 0;
         horse.speed = 0;
-        document.getElementById(horse.id).style.left = '0px';
-        document.getElementById(horse.id).style.top = lineTop[0] + 'px';
+        const elem = document.getElementById(horse.id);
+        elem.style.left = '0px';
+        elem.style.top = lineTop[0] + 'px';
       });
       document.getElementById('result').innerHTML = '';
+      document.getElementById('ranking').innerHTML = '';
       lastFrame = null;
     }
 
@@ -165,8 +178,8 @@
 
     function loadStats() {
       horses.forEach(horse => {
-        const storedWins = localStorage.getItem(horse.id);
-        if (storedWins) horse.wins = parseInt(storedWins);
+        const stored = localStorage.getItem(horse.id);
+        if (stored) horse.wins = parseInt(stored);
       });
     }
 
@@ -185,14 +198,14 @@
     }
 
     function updateStatsUI() {
-      let totalWins = horses.reduce((acc, h) => acc + h.wins, 0);
-      let statsHTML = '<h3>승률</h3><ul>';
+      let total = horses.reduce((acc, h) => acc + h.wins, 0);
+      let html = '<h3>📊 누적 승률</h3><ul>';
       horses.forEach(h => {
-        const percent = totalWins ? ((h.wins / totalWins) * 100).toFixed(1) : 0;
-        statsHTML += `<li>${h.name}: ${h.wins}승 (${percent}%)</li>`;
+        const p = total ? ((h.wins / total) * 100).toFixed(1) : 0;
+        html += `<li>${h.name}: ${h.wins}승 (${p}%)</li>`;
       });
-      statsHTML += '</ul>';
-      document.getElementById('stats').innerHTML = statsHTML;
+      html += '</ul>';
+      document.getElementById('stats').innerHTML = html;
     }
   </script>
 

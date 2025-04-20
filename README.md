@@ -2,14 +2,14 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>2줄 트랙 + 사용자 승률 + 중간 순위</title>
+  <title>경마 게임 - 레인 정렬</title>
   <style>
     body { font-family: sans-serif; padding: 20px; }
 
     .track {
       position: relative;
-      width: 2000px;
-      height: 260px;
+      width: 2200px;
+      height: 500px;
       border: 3px solid #000;
       margin-bottom: 20px;
       background-color: #f0f0f0;
@@ -35,7 +35,7 @@
 </head>
 <body>
 
-  <h1>🏇 2줄 트랙 경마 - 사용자 승률 + 실시간 순위</h1>
+  <h1>🏇 경마 게임 - 고유 레인 + 승률 + 순위</h1>
 
   <div>
     <label>1번 말 승률 (%) <input id="rate1" type="number" value="60" min="0" max="100"></label>
@@ -57,15 +57,18 @@
 
   <script>
     const horses = [
-      { id: 'horse1', name: '1번 말', pos: 0, trackStep: 0, wins: 0, speed: 0 },
-      { id: 'horse2', name: '2번 말', pos: 0, trackStep: 0, wins: 0, speed: 0 },
-      { id: 'horse3', name: '3번 말', pos: 0, trackStep: 0, wins: 0, speed: 0 }
+      { id: 'horse1', name: '1번 말', pos: 0, trackStep: 0, wins: 0, speed: 0, index: 0 },
+      { id: 'horse2', name: '2번 말', pos: 0, trackStep: 0, wins: 0, speed: 0, index: 1 },
+      { id: 'horse3', name: '3번 말', pos: 0, trackStep: 0, wins: 0, speed: 0, index: 2 }
     ];
 
     const horseWidth = 200;
-    const trackWidth = 2000;
-    const fullDistance = 4000;
-    const lineTop = [30, 150];
+    const trackWidth = 2200;
+    const fullDistance = 4400;
+    const lineTop = [
+      [30, 110, 190],   // 첫 줄
+      [270, 340, 410]   // 두 번째 줄
+    ];
     let raceInterval = null;
     let animationId = null;
     let lastFrame = null;
@@ -112,12 +115,14 @@
 
       horses.forEach(horse => {
         horse.pos += horse.speed * delta;
+
         if (horse.trackStep === 0 && horse.pos + horseWidth >= trackWidth) {
           horse.trackStep = 1;
           horse.pos = 0;
         }
+
         const left = horse.pos;
-        const top = lineTop[horse.trackStep];
+        const top = lineTop[horse.trackStep][horse.index];
         const elem = document.getElementById(horse.id);
         elem.style.left = left + 'px';
         elem.style.top = top + 'px';
@@ -158,7 +163,7 @@
         horse.speed = 0;
         const elem = document.getElementById(horse.id);
         elem.style.left = '0px';
-        elem.style.top = lineTop[0] + 'px';
+        elem.style.top = lineTop[0][horse.index] + 'px';
       });
       document.getElementById('result').innerHTML = '';
       document.getElementById('ranking').innerHTML = '';
